@@ -13,18 +13,43 @@ let verify = async (_token) => {
     return payload = ticket.getPayload()
 }
 
+let auth = async (ctx, next) => {
+    const token = ctx.request.headers['X-Authentication'] || ctx.request.headers['x-authentication']
+
+    if(typeof token !== 'undefined') {
+        try {
+            ctx.token = await verify(token)
+            next();
+        } catch (err) {
+            ctx.status = 403
+            ctx.body = err.message
+        }
+    } else {
+        ctx.status = 403
+    }
+}
 
 router.get('/api/signin', async (ctx, next) => {
     const { token } = ctx.request.query
     try {
         ctx.token = await verify(token)
         if (!(ctx.token.email.substring(ctx.token.email.indexOf("@") + 1) === "miamioh.edu")){
-            throw new Error("Email domain should be miamioh.edu")
+            throw new Error("Email domain should be miamioh.edu!")
         }
         console.log("Success", ctx.token)
         ctx.status = 200
     } catch (err) {
         ctx.status = 403
+        ctx.body = err.message
+    }
+});
+
+router.get('/api/test', auth, async (ctx, next) => {
+    try {
+        ctx.response.status = 200
+        ctx.body = "Hello World!"
+    } catch (err) {
+        ctx.response.status = 500
         ctx.body = err.message
     }
 });
