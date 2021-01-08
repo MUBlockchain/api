@@ -1,5 +1,7 @@
 let Koa = require('koa')
 let Router = require('@koa/router')
+const cors = require('@koa/cors')
+const bodyParser = require('koa-body')
 let app = new Koa()
 let router = new Router()
 let {OAuth2Client} = require('google-auth-library')
@@ -73,7 +75,7 @@ router.get('/api/signin', async (ctx, next) => {
 
 router.post('/api/image', async (ctx, next) => {
     try {
-        let data = ctx.request.body[unparsed]
+        let data = await readFile(ctx.request.files.image.path)
         let url = await uploadToS3(data)
         ctx.body = url
         ctx.status = 200
@@ -93,6 +95,8 @@ router.get('/api/test', auth, async (ctx, next) => {
     }
 });
 
+app.use(cors({ origin: '*', allowHeaders: ['Content-Type'], exposeHeaders: ['content-type'] }))
+app.use(bodyParser({ multipart: true, includeUnparsed: true, jsonLimit: '12mb' }))
 app.use(router.routes());
 app.use(router.allowedMethods());
 app.listen(3000);
