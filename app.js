@@ -73,7 +73,7 @@ router.get('/api/signin', async (ctx, next) => {
 
 router.post('/api/image', async (ctx, next) => {
     try {
-        let data = await readFile('./test-image.jpg')
+        let data = ctx.request.body[unparsed]
         let url = await uploadToS3(data)
         ctx.body = url
         ctx.status = 200
@@ -92,29 +92,6 @@ router.get('/api/test', auth, async (ctx, next) => {
         ctx.body = err.message
     }
 });
-
-const request = async ({ method, url, body }) => {
-    let headers = {}
-    if (typeof body === 'object' && !(body instanceof File)) {
-      headers['Content-Type'] = 'application/json'
-      body = JSON.stringify(body)
-    }
-    const resp = await fetch(url, { method, headers, body })
-    if (!resp.ok) {
-      let error = new Error('server responded with an http error')
-      error.code = resp.status
-      error.original = resp
-      throw error
-    }
-    const respContentType = [...resp.headers.entries()].find(([k, v]) => k === 'content-type')
-    if (/json/.test(respContentType)) {
-      return await resp.json()
-    }
-    if (/text/.test(respContentType)) {
-      return await resp.text()
-    }
-    return resp
-  }
 
 app.use(router.routes());
 app.use(router.allowedMethods());
