@@ -1,19 +1,20 @@
-let Koa = require('koa')
-let Router = require('@koa/router')
+const Koa = require('koa')
+const Router = require('@koa/router')
 const cors = require('@koa/cors')
 const bodyParser = require('koa-body')
-let app = new Koa()
-let router = new Router()
-let {OAuth2Client} = require('google-auth-library')
-let oauth = new OAuth2Client(process.env.OAUTH)
+const app = new Koa()
+const router = new Router()
+const {OAuth2Client} = require('google-auth-library')
+const oauth = new OAuth2Client(process.env.OAUTH)
 const BUCKET_NAME = 'mubc-api-image';
-let fs = require('file-system')
-let util = require('util')
-let { v4: uuidv4 } = require('uuid');
-let AWS = require('aws-sdk');
-let dotenv = require('dotenv');
+const fs = require('file-system')
+const path = require('path')
+const https = require('https')
+const util = require('util')
+const { v4: uuidv4 } = require('uuid');
+const AWS = require('aws-sdk');
+const dotenv = require('dotenv');
 const readFile = util.promisify(fs.readFile);
-
 
 let verify = async (_token) => {
     let ticket = await oauth.verifyIdToken({
@@ -100,7 +101,17 @@ app.use(bodyParser({ multipart: true, includeUnparsed: true, jsonLimit: '12mb' }
 app.use(router.routes());
 app.use(router.allowedMethods());
 
-const server = app.listen(3000);
-module.exports = {
-    server
-  };
+let config = {
+	domain: 'app.mubc.io',
+	https: {
+		port: 8080,
+		options: {
+			key: fs.readFileSync(path.resolve(process.cwd(), 'certs/privkey.pem'), 'utf8').toString(),
+			cert: fs.readFileSync(path.resolve(process.cwd(), 'certs/fullchain.pem'), 'utf8').toString()
+		}
+	}
+}
+
+const server = https.createServer(config.https.options, app.callback())
+
+module.exports = server.listen(config.https.port)
