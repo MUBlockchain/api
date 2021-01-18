@@ -51,7 +51,7 @@ let uploadToS3 = async (data) => {
     await s3.putObject({
         Key: name,
         Bucket: BUCKET_NAME,
-        ContentType: 'test-image.jpg',
+        ContentType: 'test-imagejpg',
         Body: data,
         ACL: 'public-read',
     }).promise()
@@ -63,13 +63,13 @@ router.get('/api/signin', async (ctx, next) => {
     try {
         ctx.token = await verify(token)
         if (!(ctx.token.email.substring(ctx.token.email.indexOf("@") + 1) === "miamioh.edu")){
-            throw new Error("Email domain should be miamioh.edu!")
+            throw new Error("Email domain should be miamioh.edu")
         }
-        console.log("Success", ctx.token)
+        ctx.body = "Success"
         ctx.status = 200
     } catch (err) {
         ctx.status = 403
-        ctx.body = err.message
+        ctx.body = "Error"
     }
 });
 
@@ -85,13 +85,13 @@ router.post('/api/image', async (ctx, next) => {
     }
 });
 
-router.get('/api/test', auth, async (ctx, next) => {
+router.get('/api/home', auth, async (ctx, next) => {
     try {
-        ctx.response.status = 200
-        ctx.body = "Hello World!"
+        ctx.status = 200
+        ctx.body = "Hello World"
     } catch (err) {
-        ctx.response.status = 500
-        ctx.body = err.message
+        ctx.status = 403
+        ctx.body = "Error"
     }
 });
 
@@ -99,4 +99,8 @@ app.use(cors({ origin: '*', allowHeaders: ['Content-Type'], exposeHeaders: ['con
 app.use(bodyParser({ multipart: true, includeUnparsed: true, jsonLimit: '12mb' }))
 app.use(router.routes());
 app.use(router.allowedMethods());
-app.listen(3000);
+
+const server = app.listen(3000);
+module.exports = {
+    server
+  };
