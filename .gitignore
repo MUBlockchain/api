@@ -1,3 +1,7 @@
 .env
-node_modules/
-certs/
+certs
+
+node_modules
+.eslintrc*
+*.swp
+.nyc_output
