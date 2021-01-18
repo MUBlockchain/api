@@ -4,7 +4,7 @@ const chaiString = require('chai-string');
 const { server } = require("../app");
 const expect = chai.expect;
 const {readFileSync} = require('fs');
-const BUCKET_NAME = 'mubc-api-image';
+require('dotenv').config()
 
 chai.use(chaiHttp).use(chaiString);
 
@@ -76,7 +76,9 @@ describe("App", () => {
         .attach('image', readFileSync('./website.jpg'), 'website.jpg')
         .end((err, res) => {
           expect(res).to.have.status(200);
-          expect(res.text).to.have.string(`https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`);
+          expect(res.text).to.have.string(
+            `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`
+          );
           done();
         });
     });

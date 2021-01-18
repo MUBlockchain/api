@@ -1,3 +1,4 @@
+require('dotenv').config()
 const Koa = require('koa')
 const Router = require('@koa/router')
 const cors = require('@koa/cors')
@@ -6,14 +7,12 @@ const app = new Koa()
 const router = new Router()
 const {OAuth2Client} = require('google-auth-library')
 const oauth = new OAuth2Client(process.env.OAUTH)
-const BUCKET_NAME = 'mubc-api-image';
 const fs = require('file-system')
 const path = require('path')
 const https = require('https')
 const util = require('util')
 const { v4: uuidv4 } = require('uuid');
 const AWS = require('aws-sdk');
-const dotenv = require('dotenv');
 const readFile = util.promisify(fs.readFile);
 
 let verify = async (_token) => {
@@ -40,7 +39,6 @@ let auth = async (ctx, next) => {
     }
 }
 
-dotenv.config()
 let s3 = new AWS.S3({
     region: process.env.AWS_REGION,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -51,12 +49,12 @@ let uploadToS3 = async (data) => {
     const name = uuidv4() + '.jpg'
     await s3.putObject({
         Key: name,
-        Bucket: BUCKET_NAME,
+        Bucket: process.env.AWS_BUCKET_NAME,
         ContentType: 'test-imagejpg',
         Body: data,
         ACL: 'public-read',
     }).promise()
-    return `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${name}`
+    return `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${name}`
 }
 
 router.get('/api/signin', async (ctx, next) => {
@@ -101,17 +99,25 @@ app.use(bodyParser({ multipart: true, includeUnparsed: true, jsonLimit: '12mb' }
 app.use(router.routes());
 app.use(router.allowedMethods());
 
-let config = {
-	domain: 'app.mubc.io',
-	https: {
-		port: 8080,
-		options: {
-			key: fs.readFileSync(path.resolve(process.cwd(), 'certs/privkey.pem'), 'utf8').toString(),
-			cert: fs.readFileSync(path.resolve(process.cwd(), 'certs/fullchain.pem'), 'utf8').toString()
-		}
-	}
+let server
+
+if (process.env.PRODUCTION === 1) {
+    let config = {
+        domain: 'app.mubc.io',
+        https: {
+            port: 8080,
+            options: {
+                key: fs.readFileSync(path.resolve(process.cwd(), 'certs/privkey.pem'), 'utf8').toString(),
+                cert: fs.readFileSync(path.resolve(process.cwd(), 'certs/fullchain.pem'), 'utf8').toString()
+            }
+        }
+    }
+    server = (https.createServer(config.https.options, app.callback())).listen(config.https.port)
+    console.log("Running HTTPS API")
+} else {
+    server = app.listen(8080)
+    console.log("Running HTTP API")
 }
 
-const server = https.createServer(config.https.options, app.callback())
 
-module.exports = server.listen(config.https.port)
+module.exports = server
