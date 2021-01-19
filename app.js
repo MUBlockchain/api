@@ -73,9 +73,9 @@ router.get('/api/signin', async (ctx, next) => {
     const { token } = ctx.request.query
     try {
         ctx.token = await verify(token)
-        if (!(ctx.token.email.substring(ctx.token.email.indexOf("@") + 1) === "miamioh.edu")) {
-            throw new Error("Email domain should be miamioh.edu")
-        }
+        // if (!(ctx.token.email.substring(ctx.token.email.indexOf("@") + 1) === "miamioh.edu")) {
+        //     throw new Error("Email domain should be miamioh.edu")
+        // }
         ctx.body = "Success"
         ctx.status = 200
     } catch (err) {
