@@ -30,7 +30,7 @@ let auth = async (ctx, next) => {
     if (typeof token !== 'undefined') {
         try {
             ctx.token = await verify(token)
-            next();
+            await next();
         } catch (err) {
             ctx.status = 403
             ctx.body = err.message
@@ -84,7 +84,7 @@ router.get('/api/signin', async (ctx, next) => {
     }
 });
 
-router.post('/api/image', async (ctx, next) => {
+router.post('/api/image', auth, async (ctx, next) => {
     try {
         let data = await readFile(ctx.request.files.image.path)
         let url = await uploadToS3(data)
@@ -119,7 +119,7 @@ router.get('/api/twitterid', async (ctx, next) => {
     }
 });
 
-app.use(cors({ origin: '*', allowHeaders: ['Content-Type'], exposeHeaders: ['content-type'] }))
+app.use(cors({ origin: '*', allowHeaders: ['X-Authentication'] }))
 app.use(bodyParser({ multipart: true, includeUnparsed: true, jsonLimit: '12mb' }))
 app.use(router.routes());
 app.use(router.allowedMethods());
