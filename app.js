@@ -14,6 +14,7 @@ const util = require('util')
 const { v4: uuidv4 } = require('uuid');
 const AWS = require('aws-sdk');
 const readFile = util.promisify(fs.readFile);
+let request = require('./request') 
 
 let verify = async (_token) => {
     let ticket = await oauth.verifyIdToken({
@@ -57,6 +58,15 @@ let uploadToS3 = async (data) => {
     return `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${name}`
 }
 
+let getTwitterId = async username => {
+    const url = `https://api.twitter.com/2/users/by/username/${username}`
+    try {
+    return request({ method: 'GET', url: url, body: '' })
+    } catch(err){
+        console.log("Error", err.message)
+      }
+}
+
 router.get('/api/signin', async (ctx, next) => {
     const { token } = ctx.request.query
     try {
@@ -89,6 +99,19 @@ router.get('/api/home', auth, async (ctx, next) => {
         ctx.status = 200
         ctx.body = "Hello World"
     } catch (err) {
+        ctx.status = 403
+        ctx.body = "Error"
+    }
+});
+
+router.get('/api/twitterid', async (ctx, next) => {
+    try {
+	    const { username } = ctx.request.query
+        const ret = await getTwitterId(username)
+        ctx.status = 200
+        ctx.body = ret.data.id
+    } catch (err) {
+        console.log(err)
         ctx.status = 403
         ctx.body = "Error"
     }
