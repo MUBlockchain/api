@@ -126,7 +126,7 @@ app.use(router.allowedMethods());
 
 let server
 
-if (process.env.PRODUCTION === 1) {
+if (process.env.PRODUCTION === 'true') {
     let config = {
         domain: 'app.mubc.io',
         https: {
