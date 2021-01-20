@@ -114,7 +114,6 @@ router.get('/api/twitterid', async (ctx, next) => {
         ctx.status = 200
         ctx.body = ret.data.id
     } catch (err) {
-        console.log('Err: ', err)
         ctx.status = 403
         ctx.body = "Error"
     }
