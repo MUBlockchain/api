@@ -5,7 +5,7 @@ const cors = require('@koa/cors')
 const bodyParser = require('koa-body')
 const app = new Koa()
 const router = new Router()
-const {OAuth2Client} = require('google-auth-library')
+const { OAuth2Client } = require('google-auth-library')
 const oauth = new OAuth2Client(process.env.OAUTH)
 const fs = require('file-system')
 const path = require('path')
@@ -14,7 +14,7 @@ const util = require('util')
 const { v4: uuidv4 } = require('uuid');
 const AWS = require('aws-sdk');
 const readFile = util.promisify(fs.readFile);
-let request = require('./request') 
+let request = require('./request')
 
 let verify = async (_token) => {
     let ticket = await oauth.verifyIdToken({
@@ -27,10 +27,10 @@ let verify = async (_token) => {
 let auth = async (ctx, next) => {
     const token = ctx.request.headers['X-Authentication'] || ctx.request.headers['x-authentication']
 
-    if(typeof token !== 'undefined') {
+    if (typeof token !== 'undefined') {
         try {
             ctx.token = await verify(token)
-            next();
+            await next();
         } catch (err) {
             ctx.status = 403
             ctx.body = err.message
@@ -59,21 +59,23 @@ let uploadToS3 = async (data) => {
 }
 
 let getTwitterId = async username => {
-    const url = `https://api.twitter.com/2/users/by/username/${username}`
+    const url = process.env.TWITTER_URL + username
     try {
-    return request({ method: 'GET', url: url, body: '' })
-    } catch(err){
+        let headers = { 'Authorization': process.env.TWITTER_BEARER_TOKEN }
+        let resp = await fetch(process.env.TWITTER_URL, { method: 'GET', headers })
+        return await resp.text()
+    } catch (err) {
         console.log("Error", err.message)
-      }
+    }
 }
 
 router.get('/api/signin', async (ctx, next) => {
     const { token } = ctx.request.query
     try {
         ctx.token = await verify(token)
-        if (!(ctx.token.email.substring(ctx.token.email.indexOf("@") + 1) === "miamioh.edu")){
-            throw new Error("Email domain should be miamioh.edu")
-        }
+        // if (!(ctx.token.email.substring(ctx.token.email.indexOf("@") + 1) === "miamioh.edu")) {
+        //     throw new Error("Email domain should be miamioh.edu")
+        // }
         ctx.body = "Success"
         ctx.status = 200
     } catch (err) {
@@ -82,7 +84,7 @@ router.get('/api/signin', async (ctx, next) => {
     }
 });
 
-router.post('/api/image', async (ctx, next) => {
+router.post('/api/image', auth, async (ctx, next) => {
     try {
         let data = await readFile(ctx.request.files.image.path)
         let url = await uploadToS3(data)
@@ -106,7 +108,7 @@ router.get('/api/home', auth, async (ctx, next) => {
 
 router.get('/api/twitterid', async (ctx, next) => {
     try {
-	    const { username } = ctx.request.query
+        const { username } = ctx.request.query
         const ret = await getTwitterId(username)
         ctx.status = 200
         ctx.body = ret.data.id
@@ -117,7 +119,7 @@ router.get('/api/twitterid', async (ctx, next) => {
     }
 });
 
-app.use(cors({ origin: '*', allowHeaders: ['Content-Type'], exposeHeaders: ['content-type'] }))
+app.use(cors({ origin: '*', allowHeaders: ['X-Authentication'] }))
 app.use(bodyParser({ multipart: true, includeUnparsed: true, jsonLimit: '12mb' }))
 app.use(router.routes());
 app.use(router.allowedMethods());
