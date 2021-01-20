@@ -14,7 +14,7 @@ module.exports = async function ({ method, url, body }) {
       body = JSON.stringify(body)
     }
     if(twitter) {
-      headers['Authorization'] = ` Bearer ${process.env.BEARER_TOKEN}`
+      headers['Authorization'] = ` Bearer ${process.env.TWITTER_BEARER_TOKEN}`
     }
     let resp
     if(method === 'GET') {

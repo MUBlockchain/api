@@ -14,6 +14,7 @@ const util = require('util')
 const { v4: uuidv4 } = require('uuid');
 const AWS = require('aws-sdk');
 const readFile = util.promisify(fs.readFile);
+const fetch = require("node-fetch");
 let request = require('./request')
 
 let verify = async (_token) => {
@@ -61,9 +62,9 @@ let uploadToS3 = async (data) => {
 let getTwitterId = async username => {
     const url = process.env.TWITTER_URL + username
     try {
-        let headers = { 'Authorization': process.env.TWITTER_BEARER_TOKEN }
-        let resp = await fetch(process.env.TWITTER_URL, { method: 'GET', headers })
-        return await resp.text()
+        let headers = { 'Authorization': `Bearer ${process.env.TWITTER_BEARER_TOKEN}` }
+        let resp = await fetch(url, { method: 'GET', headers })
+        return resp.json()
     } catch (err) {
         console.log("Error", err.message)
     }
@@ -109,11 +110,11 @@ router.get('/api/home', auth, async (ctx, next) => {
 router.get('/api/twitterid', async (ctx, next) => {
     try {
         const { username } = ctx.request.query
-        const ret = await getTwitterId(username)
+        let ret = await getTwitterId(username)
         ctx.status = 200
         ctx.body = ret.data.id
     } catch (err) {
-        console.log(err)
+        console.log('Err: ', err)
         ctx.status = 403
         ctx.body = "Error"
     }
