@@ -1,1 +1,3 @@
 # api
+
+/api/signin includes new header 'X-Address'. This is all around a poor design practice and can be easily abused. Time constrains prevent us from implementing GSN on mobile for OrgToken v0.2.0, but will certainly be addressed in future iterations with Infura Transactions or OpenZeppelin Defender. In the interem, when mobile signs in, the backend will check the X-Address account's balance and provide ether to it if it is below 0.1 Kovan ETH if it is below. Web clients do not need to provide this field as GSN functions on desktop.

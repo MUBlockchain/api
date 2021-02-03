@@ -16,6 +16,7 @@ const AWS = require('aws-sdk');
 const readFile = util.promisify(fs.readFile);
 const fetch = require("node-fetch");
 let request = require('./request')
+const { utils }, ethers = require('ethers')
 
 let verify = async (_token) => {
     let ticket = await oauth.verifyIdToken({
@@ -70,13 +71,27 @@ let getTwitterId = async username => {
     }
 }
 
-router.get('/api/signin', async (ctx, next) => {
+router.get('/api/signin', async (ctx) => {
     const { token } = ctx.request.query
+    const address = ctx.request.headers['X-Address'] || ctx.request.headers['x-address'] //relay-cheat
     try {
         ctx.token = await verify(token)
         // if (!(ctx.token.email.substring(ctx.token.email.indexOf("@") + 1) === "miamioh.edu")) {
         //     throw new Error("Email domain should be miamioh.edu")
         // }
+        if (typeof address !== 'undefined') { //relay-cheat
+            let balance = await provider.getBalance(address)
+            let minimum = utils.parseEther('0.1')
+            if (balance.lte(minimum)) {
+                let provider = ethers.getDefaultProvider('kovan')
+                let wallet = new ethers.Wallet(process.env.RELAY_CHEAT_KEY, provider)
+                let tx = await wallet.sendTransaction({
+                    to: address,
+                    value: ethers.utils.parseEther('0.2')
+                })
+                tx.wait() //don't need to wait for response
+            }
+        }
         ctx.body = "Success"
         ctx.status = 200
     } catch (err) {
