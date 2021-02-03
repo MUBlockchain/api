@@ -16,8 +16,8 @@ const AWS = require('aws-sdk');
 const readFile = util.promisify(fs.readFile);
 const fetch = require("node-fetch");
 let request = require('./request')
-const { utils }, ethers = require('ethers')
-
+const  ethers = require('ethers')
+const utils = ethers.utils
 let verify = async (_token) => {
     let ticket = await oauth.verifyIdToken({
         idToken: _token,
